@@ -1,0 +1,5 @@
+{
+  "name": "Proof-of-Prompt",
+  "description": "A web application to prove authorship and originality of AI-generated content using blockchain-based registries. Users can generate content from a prompt using Gemini and then create a cryptographic hash of the prompt and content to simulate registration on a blockchain.",
+  "requestFramePermissions": []
+}
