@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header';
 import { PromptForm } from './components/PromptForm';
@@ -15,6 +14,12 @@ const App: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
   const [registrationProof, setRegistrationProof] = useState<RegistrationProof | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [draftMessage, setDraftMessage] = useState<string | null>(null);
+
+  const showDraftMessage = (message: string) => {
+    setDraftMessage(message);
+    setTimeout(() => setDraftMessage(null), 3000);
+  };
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
@@ -63,6 +68,34 @@ const App: React.FC = () => {
     }
   }, [prompt, generatedContent]);
 
+  const handleSaveDraft = useCallback(() => {
+    try {
+      const draft = { prompt, generatedContent };
+      localStorage.setItem('proofOfPromptDraft', JSON.stringify(draft));
+      showDraftMessage('Draft saved successfully!');
+    } catch (e) {
+      setError('Failed to save draft. Your browser might not support localStorage or it is full.');
+    }
+  }, [prompt, generatedContent]);
+
+  const handleLoadDraft = useCallback(() => {
+    try {
+      const savedDraft = localStorage.getItem('proofOfPromptDraft');
+      if (savedDraft) {
+        const { prompt: savedPrompt, generatedContent: savedContent } = JSON.parse(savedDraft);
+        setPrompt(savedPrompt);
+        setGeneratedContent(savedContent || '');
+        setRegistrationProof(null); // Clear old proof as it's a draft
+        setError(null);
+        showDraftMessage('Draft loaded successfully!');
+      } else {
+        showDraftMessage('No saved draft found.');
+      }
+    } catch (e) {
+      setError('Failed to load draft. The saved data might be corrupted.');
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans antialiased">
       <main className="container mx-auto px-4 py-8 md:py-12">
@@ -74,7 +107,15 @@ const App: React.FC = () => {
             setPrompt={setPrompt}
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
+            onSaveDraft={handleSaveDraft}
+            onLoadDraft={handleLoadDraft}
           />
+
+          {draftMessage && (
+            <div className="bg-cyan-900/50 border border-cyan-700 text-cyan-300 px-4 py-3 rounded-lg animate-fade-in" role="status">
+              <span className="block sm:inline">{draftMessage}</span>
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg" role="alert">
@@ -91,7 +132,7 @@ const App: React.FC = () => {
             hasProof={!!registrationProof}
           />
           
-          {registrationProof && <ProofDisplay proof={registrationProof} />}
+          {registrationProof && <ProofDisplay proof={registrationProof} content={generatedContent} />}
         </div>
       </main>
       <footer className="text-center py-6 text-slate-500 text-sm">
